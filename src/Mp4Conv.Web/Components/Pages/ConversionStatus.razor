@@ -31,6 +31,7 @@ else
         <thead>
             <tr>
                 <th class="conversion-table-status-col"></th>
+                <th class="conversion-table-num-col">#</th>
                 <th>File</th>
                 <th>Video Codec</th>
                 <th>Audio Codec</th>
@@ -44,12 +45,15 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (FileConversionEntity entry in this.ActiveEntries)
+            @for (int i = 0; i < this.ActiveEntries.Count; i++)
             {
+                FileConversionEntity entry = this.ActiveEntries[i];
+                int position = this.ActiveEntries.Count - i;
                 <tr>
                     <td class="conversion-table-status-col">
                         <ConversionStatusIcon Status="entry.Status" Size="20" />
                     </td>
+                    <td class="conversion-table-num-col">@position</td>
                     <td class="conversion-table-filename" title="@entry.FilePathAndName">
                         <div class="conversion-table-filename-inner">
                             <span>@System.IO.Path.GetFileName(entry.FilePathAndName)</span>

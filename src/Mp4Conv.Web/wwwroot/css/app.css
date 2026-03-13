@@ -620,6 +620,13 @@ h1 {
         background: var(--bg-tertiary);
     }
 
+.conversion-table-num-col {
+    width: 32px;
+    text-align: center !important;
+    color: var(--text-light);
+    font-size: 0.75rem;
+}
+
 .conversion-table-status-col {
     width: 40px;
     text-align: center;
