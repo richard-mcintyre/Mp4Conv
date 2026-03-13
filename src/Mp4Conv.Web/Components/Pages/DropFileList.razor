@@ -1,0 +1,72 @@
+@page "/drop"
+@using Mp4Conv.Web.Models
+
+<PageTitle>Drop Files</PageTitle>
+<div class="page-header">
+    <h1>Drop Files</h1>
+    @if (this.DroppedFiles.Count > 0)
+    {
+        <button class="btn btn-ghost btn-sm" style="margin-left: auto" @onclick="this.ClearFiles">Clear</button>
+    }
+</div>
+
+<div class="folder-list-layout">
+    <div class="folder-list-files">
+        <div class="drop-zone @(this.IsDraggingOver ? "drop-zone-active" : "")" @ref="_dropZoneRef">
+            @if (!string.IsNullOrEmpty(_dropError))
+            {
+                <div class="drop-zone-error">@_dropError</div>
+            }
+
+            @if (this.DroppedFiles.Count == 0)
+            {
+                <div class="drop-zone-hint">
+                    <img src="icons/drop.svg" class="drop-zone-icon" alt="Drop files" />
+                    <span>Drop .mkv or .mp4 files here</span>
+                    @if (this.SourceFolders.Count > 0)
+                    {
+                        <div class="drop-zone-folders">
+                            @foreach (string folder in this.SourceFolders)
+                            {
+                                <div class="drop-zone-folder-item">
+                                    <img src="icons/folder.svg" class="file-icon drop-zone-folder-icon" alt="" />
+                                    <span>@folder</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="drop-zone-no-folders">No source folders configured — add them in Settings</span>
+                    }
+                </div>
+            }
+            else
+            {
+                @for (int i = 0; i < this.DroppedFiles.Count; i++)
+                {
+                    FileModel fileModel = this.DroppedFiles[i];
+                    int index = i;
+                    string ext = System.IO.Path.GetExtension(fileModel.FilePathAndName).ToLowerInvariant();
+                    string icon = ext switch { ".mp4" => "mp4", ".mkv" => "mkv", _ => "file" };
+                    <div>
+                        <label class="file-list-label"
+                               @onclick="e => this.OnFileClick(fileModel, index, e)"
+                               @onclick:preventDefault>
+                            <input type="checkbox" checked="@this.SelectedFiles.Contains(fileModel)" />
+                            <img src="icons/@(icon).svg" class="file-icon" alt="@ext" />
+                            @System.IO.Path.GetFileName(fileModel.FilePathAndName)
+                        </label>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @if (this.SelectedFiles.Count > 0)
+    {
+        <div class="folder-list-settings">
+            <ConversionSettings SelectedFiles="this.SelectedFiles" OnFilesQueued="this.OnFilesQueued" />
+        </div>
+    }
+</div>

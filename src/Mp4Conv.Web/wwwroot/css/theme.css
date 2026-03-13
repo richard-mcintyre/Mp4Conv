@@ -1,0 +1,22 @@
+﻿/* Dark Theme */
+:root {
+    /* Backgrounds */
+    --bg-primary: #181818;
+    --bg-secondary: #1F1F1F;
+    --bg-tertiary: #313131;
+    /* Borders */
+    --border-color: #3C3C3C;
+    /* Text */
+    --text-primary: #CCCCCC;
+    --text-secondary: #9BDBFE;
+    --text-accent: #D7BA7D;
+    --text-warm: #CE9178;
+    --text-light: #B5CEA8;
+    /* Interactive / Accent */
+    --accent-primary: #9BDBFE;
+    --accent-hover: #D7BA7D;
+    /* Icon filters (CSS filter approximations) */
+    --icon-default: brightness(0) saturate(100%) invert(85%) sepia(5%) saturate(200%) hue-rotate(180deg);
+    --icon-hover: brightness(0) saturate(100%) invert(90%) sepia(20%) saturate(800%) hue-rotate(170deg);
+    --icon-active: brightness(0) saturate(100%) invert(75%) sepia(30%) saturate(600%) hue-rotate(5deg);
+}

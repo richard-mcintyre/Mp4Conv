@@ -1,0 +1,39 @@
+@using Mp4Conv.Web.Data
+
+@switch (this.Status)
+{
+    case FileConversionStatus.NotStarted:
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="@this.Size" height="@this.Size">
+            <title>Not started</title>
+            <path fill="#90A4AE" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+        </svg>
+        break;
+
+    case FileConversionStatus.InProgress:
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon-spin" viewBox="0 0 24 24" width="@this.Size" height="@this.Size">
+            <title>In progress</title>
+            <path fill="#42A5F5" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+        </svg>
+        break;
+
+    case FileConversionStatus.Completed:
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="@this.Size" height="@this.Size">
+            <title>Completed</title>
+            <path fill="#66BB6A" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4-4 1.41-1.41L10 13.67l6.59-6.59L18 8.5l-8 8z"/>
+        </svg>
+        break;
+
+    case FileConversionStatus.Failed:
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="@this.Size" height="@this.Size">
+            <title>Failed</title>
+            <path fill="#EF5350" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+        </svg>
+        break;
+
+    case FileConversionStatus.Paused:
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="@this.Size" height="@this.Size">
+            <title>Paused</title>
+            <path fill="#FFA726" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+        break;
+}

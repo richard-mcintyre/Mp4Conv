@@ -1,0 +1,12 @@
+﻿@page "/"
+@inject NavigationManager Nav
+
+<PageTitle>MP4 Converter</PageTitle>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            Nav.NavigateTo("status", replace: true);
+    }
+}

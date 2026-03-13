@@ -1,0 +1,165 @@
+﻿@page "/config"
+@using Mp4Conv.Web.Data
+
+<PageTitle>Configuration Settings</PageTitle>
+
+<div class="page-header">
+    <h1>Configuration Settings</h1>
+</div>
+
+@if (this.Settings is null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="config-page">
+        <div class="config-panel">
+            <div class="config-form">
+                <div class="config-form-header">
+                    <h2>Settings</h2>
+                </div>
+                <div class="form-grid">
+                    <label>Root Path</label>
+                    <input type="text" @bind="this.Settings.RootPath" placeholder="e.g. O:\Video" />
+
+                    <label>Max Concurrent Conversions</label>
+                    <input type="number" @bind="this.Settings.MaxNumberOfConcurrentConversions" min="1" max="8" />
+
+                    <label>Add Paused
+                        <small class="config-field-description">Files will be queued as paused.</small>
+                    </label>
+                    <div class="form-grid-toggle-cell">
+                        <label class="toggle-switch">
+                            <input type="checkbox" @bind="this.Settings.PauseConversions" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <label>Hardware Acceleration
+                        <small class="config-field-description">Use NVIDIA NVENC GPU encoding.</small>
+                    </label>
+                    <div class="form-grid-toggle-cell">
+                        <label class="toggle-switch">
+                            <input type="checkbox" @bind="this.Settings.UseHardwareAcceleration" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <label>Processor Affinity Mask
+                        <small class="config-field-description">Toggle cores to restrict ffmpeg. All off = unrestricted.</small>
+                    </label>
+                    <div class="form-grid-toggle-cell core-toggle-cell">
+                        <div class="core-toggle-group">
+                            @for (int i = 0; i < this.ProcessorCount; i++)
+                            {
+                                int coreIndex = i;
+                                <button type="button"
+                                        class="core-toggle-btn @(this.IsCoreEnabled(coreIndex) ? "active" : "")"
+                                        @onclick="() => this.ToggleCore(coreIndex)">@coreIndex</button>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" @onclick="this.Save">Save</button>
+                </div>
+            </div>
+
+            <div class="config-form">
+                <div class="config-form-header">
+                    <h2>Drop Source Folders</h2>
+                </div>
+
+                @if (this.DropSourceFolders.Count == 0)
+                {
+                    <div class="drop-source-empty">No folders configured.</div>
+                }
+                else
+                {
+                    <div class="camera-config-list drop-source-list">
+                        @foreach (DropSourceFolderEntity folder in this.DropSourceFolders)
+                        {
+                            <div class="camera-config-item">
+                                <span class="camera-config-name">@folder.FolderPath</span>
+                                <div class="camera-config-actions">
+                                    <button class="btn btn-danger btn-sm"
+                                            title="Remove"
+                                            @onclick="() => this.RemoveDropFolder(folder)">✕</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <input class="file-filter-input drop-source-input"
+                           type="text"
+                           placeholder="e.g. O:\Video"
+                           @bind="_newFolderPath"
+                           @bind:event="oninput"
+                           @onkeydown="this.OnNewFolderKeyDown" />
+                    <button class="btn btn-primary" @onclick="this.AddDropFolder">Add</button>
+                </div>
+            </div>
+
+            <div class="config-form">
+                <div class="config-form-header">
+                    <h2>Network Credentials</h2>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem">
+                    Credentials for UNC paths (e.g. \\server\share). Passwords are stored encrypted and connections are re-established on startup.
+                </p>
+
+                @if (this.UncCredentials.Count == 0)
+                {
+                    <div class="drop-source-empty">No credentials configured.</div>
+                }
+                else
+                {
+                    <div class="camera-config-list drop-source-list">
+                        @foreach (UncCredentialEntity cred in this.UncCredentials)
+                        {
+                            <div class="camera-config-item">
+                                <span class="camera-config-name">@cred.UncPath</span>
+                                <span class="camera-config-name" style="color: var(--text-muted)">@cred.Username</span>
+                                <div class="camera-config-actions">
+                                    <button class="btn btn-danger btn-sm"
+                                            title="Remove"
+                                            @onclick="() => this.RemoveUncCredential(cred)">✕</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(_uncError))
+                {
+                    <div style="color: var(--danger); margin: 0.5rem 0; font-size: 0.875rem; white-space: pre-line">@_uncError</div>
+                }
+
+                <div class="form-grid" style="margin-top: 0.75rem">
+                    <label>UNC Path</label>
+                    <input type="text" @bind="_newUncPath" placeholder="\\server\share" />
+
+                    <label>Username</label>
+                    <input type="text" @bind="_newUncUsername" placeholder="domain\user or user" />
+
+                    <label>Password</label>
+                    <input type="password" @bind="_newUncPassword" />
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" @onclick="this.AddUncCredential">Add</button>
+                    <button class="btn btn-ghost" @onclick="this.ReconnectAll">Reconnect All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showSaveToast)
+{
+    <div class="toast toast-success">Settings saved.</div>
+}

@@ -378,6 +378,15 @@ MSBuild_Logs/
 # MFractors (Xamarin productivity tool) working folder
 **/.mfractor/
 
+# Mp4Conv - ffmpeg binaries
+**/ffmpeg/ffmpeg.exe
+**/ffmpeg/ffprobe.exe
+
+# Mp4Conv - database files
+*.db
+*.db-shm
+*.db-wal
+
 # Local History for Visual Studio
 **/.localhistory/
 

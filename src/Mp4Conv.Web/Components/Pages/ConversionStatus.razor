@@ -1,0 +1,162 @@
+﻿@page "/status"
+@using Mp4Conv.Web.Data
+@using Mp4Conv.Web.Services
+
+<PageTitle>Conversion Status</PageTitle>
+
+<div class="page-header">
+    <h1>Conversion Status</h1>
+    @if (this.ActiveEntries is { Count: > 0 })
+    {
+        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm" @onclick="this.PauseAll">Pause All</button>
+            <button class="btn btn-sm" @onclick="this.ResumeAll">Resume All</button>
+            <button class="btn btn-danger btn-sm" @onclick="this.RemoveAllEntries">Remove All</button>
+        </div>
+    }
+</div>
+
+@if (this.ActiveEntries is null)
+{
+    <div>Loading...</div>
+}
+else if (this.ActiveEntries.Count == 0)
+{
+    <div class="no-files-queued-conv">No files queued for conversion.</div>
+}
+else
+{
+    <table class="conversion-table">
+        <thead>
+            <tr>
+                <th class="conversion-table-status-col"></th>
+                <th>File</th>
+                <th>Video Codec</th>
+                <th>Audio Codec</th>
+                <th>Quality</th>
+                <th>Delete MKV</th>
+                <th>Overwrite MP4</th>
+                <th>Status Updated</th>
+                <th>Progress</th>
+                <th class="conversion-table-paused-col">Paused</th>
+                <th class="conversion-table-remove-col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (FileConversionEntity entry in this.ActiveEntries)
+            {
+                <tr>
+                    <td class="conversion-table-status-col">
+                        <ConversionStatusIcon Status="entry.Status" Size="20" />
+                    </td>
+                    <td class="conversion-table-filename" title="@entry.FilePathAndName">
+                        <div class="conversion-table-filename-inner">
+                            <span>@System.IO.Path.GetFileName(entry.FilePathAndName)</span>
+                            <span class="conversion-table-filepath">@System.IO.Path.GetDirectoryName(entry.FilePathAndName)</span>
+                        </div>
+                    </td>
+                    <td>@entry.VideoCodec</td>
+                    <td>@entry.AudioCodec</td>
+                    <td>@(entry.SetVideoQuality ? entry.VideoQuality.ToString() : "—")</td>
+                    <td>@(entry.DeleteMkvFile ? "Yes" : "No")</td>
+                    <td>@(entry.OverwriteMp4File ? "Yes" : "No")</td>
+                    <td>@(entry.StatusChangedAt?.ToLocalTime().ToString("g") ?? "—")</td>
+                    <td class="conversion-table-progress-col">
+                        @if (entry.Status == FileConversionStatus.InProgress)
+                        {
+                            ConversionProgress? progress = this.ProgressService.GetProgress(entry.Id);
+                            if (progress is not null)
+                            {
+                                <div class="conversion-progress-wrap">
+                                    <progress class="conversion-progress-bar" max="100" value="@progress.PercentComplete"></progress>
+                                    <span class="conversion-progress-text">@($"{progress.PercentComplete}% ({progress.CurrentTime} / {progress.TotalDuration}) @ {progress.Speed}")</span>
+                                </div>
+                            }
+                        }
+                        else if (entry.Status == FileConversionStatus.Failed && entry.StatusMessage is not null)
+                        {
+                            <span class="conversion-progress-error" title="@entry.StatusMessage">@(entry.StatusMessage.Length > 80 ? entry.StatusMessage[..80] + "…" : entry.StatusMessage)</span>
+                        }
+                    </td>
+                    <td class="conversion-table-paused-col">
+                        <label class="toggle-switch">
+                            <input type="checkbox"
+                                   checked="@(entry.Status == FileConversionStatus.Paused)"
+                                   disabled="@(entry.Status == FileConversionStatus.Completed || entry.Status == FileConversionStatus.Failed)"
+                                   @onchange="() => this.TogglePaused(entry)" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </td>
+                    <td class="conversion-table-remove-col">
+                        <button class="btn btn-danger btn-sm conversion-table-remove-btn"
+                                title="Remove"
+                                @onclick="() => this.RemoveEntry(entry)">✕</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (this.CompletedEntries is { Count: > 0 })
+{
+    <div class="conversion-completed-header">
+        <h2>Completed</h2>
+        <span class="conversion-completed-label">Last 3 days of conversion history</span>
+        <div style="margin-left: auto;">
+            <button class="btn btn-danger btn-sm" @onclick="this.RemoveAllCompleted">Remove All</button>
+        </div>
+    </div>
+    <table class="conversion-table">
+        <thead>
+            <tr>
+                <th class="conversion-table-status-col"></th>
+                <th>File</th>
+                <th>Video Codec</th>
+                <th>Audio Codec</th>
+                <th>Quality</th>
+                <th>Duration</th>
+                <th>Status Updated</th>
+                <th class="conversion-table-actions-col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (FileConversionEntity entry in this.CompletedEntries)
+            {
+                <tr>
+                    <td class="conversion-table-status-col">
+                        <ConversionStatusIcon Status="entry.Status" Size="20" />
+                    </td>
+                    <td class="conversion-table-filename" title="@entry.FilePathAndName">
+                        <div class="conversion-table-filename-inner">
+                            <span>@System.IO.Path.GetFileName(entry.FilePathAndName)</span>
+                            <span class="conversion-table-filepath">@System.IO.Path.GetDirectoryName(entry.FilePathAndName)</span>
+                            @if (entry.Status == FileConversionStatus.Failed && entry.StatusMessage is not null)
+                            {
+                                <span class="conversion-progress-error" title="@entry.StatusMessage">@(entry.StatusMessage.Length > 80 ? entry.StatusMessage[..80] + "…" : entry.StatusMessage)</span>
+                            }
+                        </div>
+                    </td>
+                    <td>@entry.VideoCodec</td>
+                    <td>@entry.AudioCodec</td>
+                    <td>@(entry.SetVideoQuality ? entry.VideoQuality.ToString() : "—")</td>
+                    <td>@(this.FormatDuration(entry.StartedAt, entry.StatusChangedAt))</td>
+                    <td>@(entry.StatusChangedAt?.ToLocalTime().ToString("g") ?? "—")</td>
+                    <td class="conversion-table-actions-col">
+                        <div class="conversion-table-actions">
+                            @if (entry.Status == FileConversionStatus.Failed)
+                            {
+                                <button class="btn btn-sm"
+                                        title="Retry"
+                                        @onclick="() => this.RetryEntry(entry)">↺</button>
+                            }
+                            <button class="btn btn-danger btn-sm"
+                                    title="Remove"
+                                    @onclick="() => this.RemoveEntry(entry)">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

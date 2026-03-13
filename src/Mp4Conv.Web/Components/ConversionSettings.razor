@@ -1,0 +1,57 @@
+﻿@using Mp4Conv.Web.Models
+
+<div class="config-form">
+    <div class="config-form-header">
+        <h2>Conversion Settings</h2>
+        <button class="btn btn-sm"
+                title="Low quality preset: sets video codec to libx265, CRF to 28, audio codec to aac, and audio bitrate to 128k."
+                @onclick="this.DefaultToLowQuality">Low Quality Presets</button>
+    </div>
+
+    <div class="settings-check-group">
+        <label class="settings-check-row">
+            <input type="checkbox" @bind="this.Settings.DeleteMkvFiles" />
+            <span>Delete MKV files after conversion</span>
+        </label>
+        <label class="settings-check-row">
+            <input type="checkbox" @bind="this.Settings.OverwriteMp4Files" />
+            <span>Overwrite MP4 files if they changed</span>
+        </label>
+    </div>
+
+    <div class="form-grid">
+        <label>Video Codec</label>
+        <select @bind:get="this.SelectedVideoCodec.Codec"
+                @bind:set="v => this.SelectedVideoCodec = this.AllVideoCodecs.FirstOrDefault(c => c.Codec == v) ?? ConversionSettingsModel.VideoCopyCodec">
+            @foreach (VideoCodec codec in this.AllVideoCodecs)
+            {
+                <option value="@codec.Codec">@codec.Name</option>
+            }
+        </select>
+        <label>Audio Codec</label>
+        <select @bind:get="this.SelectedAudioCodec.Codec"
+                @bind:set="v => this.SelectedAudioCodec = this.AllAudioCodecs.FirstOrDefault(c => c.Codec == v) ?? ConversionSettingsModel.AudioCopyCodec">
+            @foreach (AudioCodec codec in this.AllAudioCodecs)
+            {
+                <option value="@codec.Codec">@codec.Name</option>
+            }
+        </select>
+        <label class="form-grid-label-check">
+            <input type="checkbox" @bind="this.UseVideoQuality" />
+            Video Quality
+        </label>
+        <div class="form-grid-cell form-grid-cell-col">
+            <input type="number" @bind="this.VideoQualityValue" min="0" max="51" disabled="@(!this.UseVideoQuality)" />
+            <span class="form-optional">Lower is better. Typical range: 18–28. Only used when video codec is not 'copy'</span>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn btn-primary" @onclick="this.QueueForConversion">Queue For Conversion</button>
+    </div>
+</div>
+
+@if (_showToast)
+{
+    <div class="toast toast-success">@_toastMessage</div>
+}
