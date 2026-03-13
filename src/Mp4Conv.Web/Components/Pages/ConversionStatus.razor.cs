@@ -38,6 +38,7 @@ public partial class ConversionStatus : ComponentBase, IDisposable
     {
         this.ProgressService.OnProgressUpdate += HandleProgressUpdate;
         this.ProgressService.OnStatusChange += HandleStatusChange;
+        this.ProgressService.OnQueueChanged += HandleQueueChanged;
 
         await using Mp4ConvDbContext context = await this.DbContextFactory.CreateDbContextAsync();
         List<FileConversionEntity> all = await context.ConversionQueue.OrderBy(e => e.Id).ToListAsync();
@@ -54,6 +55,7 @@ public partial class ConversionStatus : ComponentBase, IDisposable
     {
         this.ProgressService.OnProgressUpdate -= HandleProgressUpdate;
         this.ProgressService.OnStatusChange -= HandleStatusChange;
+        this.ProgressService.OnQueueChanged -= HandleQueueChanged;
     }
 
     public string FormatDuration(DateTime? startedAt, DateTime? endedAt)
@@ -73,6 +75,19 @@ public partial class ConversionStatus : ComponentBase, IDisposable
     private void HandleProgressUpdate(int id, ConversionProgress progress)
     {
         _ = this.InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleQueueChanged()
+    {
+        _ = this.InvokeAsync(async () =>
+        {
+            await using Mp4ConvDbContext context = await this.DbContextFactory.CreateDbContextAsync();
+            this.ActiveEntries = await context.ConversionQueue
+                .Where(e => e.Status != FileConversionStatus.Completed && e.Status != FileConversionStatus.Failed)
+                .OrderBy(e => e.Id)
+                .ToListAsync();
+            StateHasChanged();
+        });
     }
 
     private void HandleStatusChange(int id, FileConversionStatus status, string? message)

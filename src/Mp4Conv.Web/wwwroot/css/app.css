@@ -747,6 +747,12 @@ h1 {
     font-size: 1.1rem;
 }
 
+.conversion-queue-count {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.6rem;
+}
+
 .conversion-completed-header {
     display: flex;
     align-items: baseline;

@@ -26,6 +26,7 @@ else if (this.ActiveEntries.Count == 0)
 }
 else
 {
+    <div class="conversion-queue-count">@this.ActiveEntries.Count @(this.ActiveEntries.Count == 1 ? "item" : "items") in queue</div>
     <table class="conversion-table">
         <thead>
             <tr>

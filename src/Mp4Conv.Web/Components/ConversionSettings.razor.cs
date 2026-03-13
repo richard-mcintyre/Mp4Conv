@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Mp4Conv.Web.Data;
 using Mp4Conv.Web.Models;
+using Mp4Conv.Web.Services;
 
 namespace Mp4Conv.Web.Components;
 
@@ -22,6 +23,9 @@ public partial class ConversionSettings : ComponentBase, IDisposable
 
     [Inject]
     public required IDbContextFactory<Mp4ConvDbContext> DbContextFactory { get; set; }
+
+    [Inject]
+    public required ConversionProgressService ProgressService { get; set; }
 
     [Parameter]
     public IReadOnlyCollection<FileModel> SelectedFiles { get; set; } = [];
@@ -132,6 +136,8 @@ public partial class ConversionSettings : ComponentBase, IDisposable
         }
 
         await context.SaveChangesAsync();
+
+        this.ProgressService.NotifyQueueChanged();
 
         IReadOnlyCollection<FileModel> queued = [.. this.SelectedFiles];
         await this.OnFilesQueued.InvokeAsync(queued);

@@ -13,6 +13,8 @@ public class ConversionProgressService
 
     public event Action<int, FileConversionStatus, string?>? OnStatusChange;
 
+    public event Action? OnQueueChanged;
+
     public void UpdateProgress(int id, ConversionProgress progress)
     {
         _progress[id] = progress;
@@ -22,6 +24,11 @@ public class ConversionProgressService
     public void NotifyStatusChange(int id, FileConversionStatus status, string? message)
     {
         OnStatusChange?.Invoke(id, status, message);
+    }
+
+    public void NotifyQueueChanged()
+    {
+        OnQueueChanged?.Invoke();
     }
 
     public ConversionProgress? GetProgress(int id)
