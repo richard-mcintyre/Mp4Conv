@@ -117,6 +117,27 @@ public partial class BrowsableFileList : ComponentBase
         }
     }
 
+    public void SelectAll()
+    {
+        IReadOnlyList<FileModel> filtered = FilteredFiles;
+        if (filtered.Count == 0)
+            return;
+
+        bool allSelected = filtered.All(f => SelectedFiles.Contains(f));
+        if (allSelected)
+        {
+            foreach (FileModel f in filtered)
+                SelectedFiles.Remove(f);
+        }
+        else
+        {
+            foreach (FileModel f in filtered)
+                SelectedFiles.Add(f);
+        }
+
+        _lastSelectedIndex = null;
+    }
+
     private void LoadCurrentPath()
     {
         if (string.IsNullOrEmpty(CurrentPath) || !Directory.Exists(CurrentPath))

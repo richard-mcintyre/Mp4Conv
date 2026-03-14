@@ -39,6 +39,13 @@ else
                        placeholder="Filter..."
                        @bind="this.FilterText"
                        @bind:event="oninput" />
+                @if (this.FilteredFiles.Count > 0)
+                {
+                    bool allSelected = this.FilteredFiles.All(f => this.SelectedFiles.Contains(f));
+                    <button class="btn btn-sm" @onclick="this.SelectAll">
+                        @(allSelected ? "Deselect All" : "Select All")
+                    </button>
+                }
 
                 @if (this.SubFolders is not null)
                 {

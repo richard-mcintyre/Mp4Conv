@@ -82,6 +82,11 @@ public partial class ConversionSettings : ComponentBase, IDisposable
 
     #region Methods
 
+    protected override void OnInitialized()
+    {
+        DefaultToLowQuality();
+    }
+
     public void DefaultToLowQuality()
     {
         this.Settings.VideoCodec  = this.AllVideoCodecs.FirstOrDefault(c => c.Codec == "libx265") ?? new VideoCodec("H.265", "libx265");
