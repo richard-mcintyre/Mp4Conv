@@ -11,11 +11,42 @@ namespace Mp4Conv.Web.Services;
 
 public class ConversionBackgroundService : BackgroundService
 {
-    private readonly IDbContextFactory<Mp4ConvDbContext> _dbContextFactory;
-    private readonly ConversionProgressService _progressService;
-    private readonly ILogger<ConversionBackgroundService> _logger;
-    private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeConversions = new();
-    private readonly ConcurrentDictionary<int, Task> _activeTasks = new();
+    #region NativeMethods
+
+    private static class NativeMethods
+    {
+        // JOB_OBJECT_LIMIT_AFFINITY — prevents the process from expanding its affinity beyond the job mask
+        public const uint JOB_OBJECT_LIMIT_AFFINITY = 0x00000010;
+
+        // JOBOBJECT_BASIC_LIMIT_INFORMATION (x64 explicit layout, total 64 bytes)
+        // LimitFlags is at offset 16, Affinity (ULONG_PTR) is at offset 48.
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+        {
+            [System.Runtime.InteropServices.FieldOffset(16)] public uint LimitFlags;
+            [System.Runtime.InteropServices.FieldOffset(48)] public UIntPtr Affinity;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern nint CreateJobObject(nint lpJobAttributes, [MarshalAs(UnmanagedType.LPStr)] string? lpName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetInformationJobObject(nint hJob, int JobObjectInformationClass,
+            ref JOBOBJECT_BASIC_LIMIT_INFORMATION lpJobObjectInformation, uint cbJobObjectInformationLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool AssignProcessToJobObject(nint hJob, nint hProcess);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetProcessAffinityMask(nint hProcess, UIntPtr dwProcessAffinityMask);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(nint hObject);
+    }
+
+    #endregion
+
+    #region Construction
 
     public ConversionBackgroundService(
         IDbContextFactory<Mp4ConvDbContext> dbContextFactory,
@@ -27,15 +58,29 @@ public class ConversionBackgroundService : BackgroundService
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    #endregion
+
+    #region Fields
+
+    private readonly IDbContextFactory<Mp4ConvDbContext> _dbContextFactory;
+    private readonly ConversionProgressService _progressService;
+    private readonly ILogger<ConversionBackgroundService> _logger;
+    private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeConversions = new();
+    private readonly ConcurrentDictionary<int, Task> _activeTasks = new();
+
+    #endregion
+
+    #region Methods
+
+    protected override async Task ExecuteAsync(CancellationToken cancellation)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        while (!cancellation.IsCancellationRequested)
         {
             try
             {
-                await ProcessQueueAsync(stoppingToken);
+                await ProcessQueueAsync(cancellation);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
             {
                 break;
             }
@@ -46,7 +91,7 @@ public class ConversionBackgroundService : BackgroundService
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellation);
             }
             catch (OperationCanceledException)
             {
@@ -460,6 +505,7 @@ public class ConversionBackgroundService : BackgroundService
         }
 
         sb.Append($"-i \"{inputPath}\" ");
+        sb.Append("-map 0 ");
         sb.Append($"-c:v {videoCodec} ");
 
         if (entry.SetVideoQuality && videoCodec != "copy")
@@ -492,6 +538,7 @@ public class ConversionBackgroundService : BackgroundService
         }
 
         sb.Append($"-c:a {entry.AudioCodec} ");
+        sb.Append("-c:s mov_text ");
         sb.Append(entry.OverwriteMp4File ? "-y " : "-n ");
         sb.Append("-progress pipe:1 -nostats -loglevel warning ");
         sb.Append($"\"{outputPath}\"");
@@ -507,34 +554,5 @@ public class ConversionBackgroundService : BackgroundService
         _ => null,
     };
 
-    private static class NativeMethods
-    {
-        // JOB_OBJECT_LIMIT_AFFINITY — prevents the process from expanding its affinity beyond the job mask
-        public const uint JOB_OBJECT_LIMIT_AFFINITY = 0x00000010;
-
-        // JOBOBJECT_BASIC_LIMIT_INFORMATION (x64 explicit layout, total 64 bytes)
-        // LimitFlags is at offset 16, Affinity (ULONG_PTR) is at offset 48.
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
-        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
-        {
-            [System.Runtime.InteropServices.FieldOffset(16)] public uint LimitFlags;
-            [System.Runtime.InteropServices.FieldOffset(48)] public UIntPtr Affinity;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern nint CreateJobObject(nint lpJobAttributes, [MarshalAs(UnmanagedType.LPStr)] string? lpName);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetInformationJobObject(nint hJob, int JobObjectInformationClass,
-            ref JOBOBJECT_BASIC_LIMIT_INFORMATION lpJobObjectInformation, uint cbJobObjectInformationLength);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool AssignProcessToJobObject(nint hJob, nint hProcess);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetProcessAffinityMask(nint hProcess, UIntPtr dwProcessAffinityMask);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool CloseHandle(nint hObject);
-    }
+    #endregion
 }
